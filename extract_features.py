@@ -13,8 +13,10 @@ import pandas as pd
 import pickle
 import skimage.feature
 
+from sklearn.preprocessing import StandardScaler
 
-def worker():
+
+def run_extractors():
     """ Run the extraction function and save the outputs to the shelve """
     last_img = None
     img = None
@@ -46,6 +48,44 @@ def worker():
         pickle.dump(df, f)
 
     print "Done!"
+
+
+def prepare_data():
+    """
+    Stuff to do:
+        1) Merge data into one dataset, adding ys
+        2)
+    """
+
+
+    print "Loading the vehicle features..."
+    with open('vehicle-features.p', 'rb') as f:
+        veh = pickle.load(f)
+        y_veh = np.ones(len(veh))
+
+    print "Loading the non-vehicle features..."
+    with open('non-vehicle-features.p', 'rb') as f:
+        non_veh = pickle.load(f)
+        y_non_veh = np.zeros(len(non_veh))
+
+    print "Making one joint dataframe"
+    df_x = pd.concat([veh, non_veh], axis=0)
+
+    print "Scaling the features"
+    scaler = StandardScaler()
+    scaler.fit(df_x.values)
+    print "Fit the scaling transform"
+    x_norm = scaler.transform(df_x.values)
+    y = np.append(np.ones(len(veh)), np.zeros(len(non_veh)))
+    print "Rescaled the features"
+
+    print "Writing the features to the file again..."
+    with open('features.p', 'wb') as f:
+        pickle.dump(x_norm, f)
+
+    with open('target.p', 'wb') as f:
+        pickle.dump(y, f)
+    print "Done! Features ready to use."
 
 
 
@@ -149,4 +189,5 @@ def measure_dims(image_list):
 
 
 if __name__ == "__main__":
-    worker()
+    # run_extractors()
+    prepare_data()
