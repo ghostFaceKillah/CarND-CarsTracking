@@ -14,14 +14,21 @@ import pickle
 import skimage.feature
 
 
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
 
-IMAGE_SIZE = (420, 580)
-CROP_SIZE = (120, 120)
+from extract_features import extract_features_one_image, imread
+
+#IMAGE_SIZE = (420, 580)
+IMAGE_SIZE = (720, 1280)
+CROP_SIZE = (64, 64)
 CROP_STRIDE = (40, 40)
 CROP_DENSITY = 20  # I actually meant stride
+
+crops_no_y = (IMAGE_SIZE[0] - CROP_SIZE[0]) / CROP_DENSITY
+crops_no_x = (IMAGE_SIZE[1] - CROP_SIZE[1]) / CROP_DENSITY
 
 
 def train():
@@ -38,24 +45,24 @@ def train():
     print "Splitting the data into training and testing..."
 
     X, y = shuffle(X, y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
 
     print "Training the classifier..."
 
-    svm = LinearSVC()
-    svm.fit(X_train, y_train)
+    classifier = LinearSVC()
+    # classifier = RandomForestClassifier(n_estimators=250, n_jobs=-1)
+    classifier.fit(X_train, y_train)
 
     print "Evalutaing the classifier ..."
-    print "{:.2%}".format(svm.score(X_test, y_test))
+    print "{:.2%}".format(classifier.score(X_test, y_test))
     print "Done!"
+
+    return classifier
 
 
 
 class PreCompute():
     def __init__(self):
-        crops_no_y = (IMAGE_SIZE[0] - CROP_SIZE[0]) / CROP_DENSITY
-        crops_no_x = (IMAGE_SIZE[1] - CROP_SIZE[1]) / CROP_DENSITY
-
         crop_y = CROP_DENSITY * np.arange(crops_no_y) + CROP_SIZE[0] / 2
         crop_x = CROP_DENSITY * np.arange(crops_no_x) + CROP_SIZE[1] / 2
 
@@ -69,7 +76,6 @@ class PreCompute():
         return self.argy, self.argx
 
 precomputed_args = PreCompute()
-ipdb.set_trace()
 
 
 def compute_prediciton_heatmap_vectorized(predictions, sigma):
@@ -87,30 +93,34 @@ def make_crop(img, crop_y, crop_x):
     ]
 
 
-def store_train_predictions():
+def store_train_predictions(classifier, scaler):
     """
     Depends on ordering of the pictures.
     """
-    model = get_unet()
-    model.load_weights(WEIGHTS_FNAME)
 
-    crops_no_y = (IMAGE_SIZE[0] - CROP_SIZE[0]) / CROP_DENSITY
-    crops_no_x = (IMAGE_SIZE[1] - CROP_SIZE[1]) / CROP_DENSITY
+    dir_name = 'data/test_images/'
+    img_list = glob.glob('data/test_images/*')
 
     predictions = np.zeros(
-        (len(IMAGE_NAMES), crops_no_y, crops_no_x), dtype=np.float32
+         (len(img_list), crops_no_y, crops_no_x), dtype=np.float32
     )
 
-    for idx, img_name in tqdm.tqdm(enumerate(IMAGE_NAMES)):
-        img = load_train_image(img_name)
+    for idx, img_name in tqdm.tqdm(enumerate(img_list)):
+        img = imread(img_name)
         for y in xrange(int(crops_no_y)):
             for x in xrange(int(crops_no_x)):
                 crop_y = CROP_DENSITY * y
                 crop_x = CROP_DENSITY * x
 
-                # print "Crop starts {}, {}".format(crop_y, crop_x)
                 crop = make_crop(img, crop_y, crop_x)
-                predictions[idx][y][x] = _get_prediction(model, crop)
+
+                features = extract_features_one_image(crop)
+                features = features.values.reshape(1, -1)
+
+                scaled_features = scaler.transform(features)
+                prediction = classifier.predict(scaled_features)
+
+                ipdb.set_trace()
 
     np.save(
         os.path.join(PROCESSED_DATA_PATH, 'train_predictions.npy'),
@@ -119,4 +129,7 @@ def store_train_predictions():
 
 
 if __name__ == "__main__":
-    train()
+    classifier = train()
+    scaler = prepare_standard_scaler()
+    store_train_predictions(classifier, scaler)
+

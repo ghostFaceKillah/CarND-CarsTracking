@@ -50,6 +50,29 @@ def run_extractors():
     print "Done!"
 
 
+
+def prepare_standard_scaler():
+    print "Preparing standard scaler"
+
+    print "Loading the vehicle features..."
+    with open('vehicle-features.p', 'rb') as f:
+        veh = pickle.load(f)
+        y_veh = np.ones(len(veh))
+
+    print "Loading the non-vehicle features..."
+    with open('non-vehicle-features.p', 'rb') as f:
+        non_veh = pickle.load(f)
+        y_non_veh = np.zeros(len(non_veh))
+
+    print "Making one joint dataframe"
+    df_x = pd.concat([veh, non_veh], axis=0)
+
+    print "Scaling the features"
+    scaler = StandardScaler()
+    scaler.fit(df_x.values)
+    return scaler
+
+
 def prepare_data():
     """
     Stuff to do:
@@ -167,6 +190,24 @@ def extract_features(image_list, wanted_features=FEATURE_2_FUNC.keys()):
     return df
 
 
+def extract_features_one_image(img, wanted_features=FEATURE_2_FUNC.keys()):
+    acc = {}
+    fnames = []
+
+    for feat_name in wanted_features:
+        acc[feat_name] = FEATURE_2_FUNC[feat_name](img)
+
+    features = pd.concat([
+         pd.Series(
+             value, 
+             index=['{}_{}'.format(key, ix) for ix in xrange(len(value))]
+         )
+         for key, value in acc.iteritems()
+    ])
+
+    return features
+
+
 def measure_dims(image_list):
     """ Check if all of the supplied img dims are the same.  """
     heights = []
@@ -189,5 +230,5 @@ def measure_dims(image_list):
 
 
 if __name__ == "__main__":
-    # run_extractors()
-    prepare_data()
+    run_extractors()
+    # prepare_data()
