@@ -101,7 +101,7 @@ def store_train_predictions(classifier, scaler):
     """
 
     dir_name = 'data/test_images/'
-    img_list = glob.glob('data/test_images/*')
+    img_list = list(glob.glob('data/test_images/*'))
 
     predictions = np.zeros(
          (len(img_list), crops_no_y, crops_no_x), dtype=np.float32
@@ -123,15 +123,35 @@ def store_train_predictions(classifier, scaler):
                 prediction = classifier.predict(scaled_features)
 
                 predictions[idx][y][x] = prediction[0]
-        print prediction[idx].mean()
+        print predictions[idx].mean()
 
     print "Saving predictions on the test images..."
     np.save('test_predictions.npy', predictions)
     print "Done!"
 
 
-if __name__ == "__main__":
+def run_classification_pipeline_on_test_images():
     classifier = train()
     scaler = prepare_standard_scaler()
     store_train_predictions(classifier, scaler)
 
+
+def watch_predictions():
+
+    dir_name = 'data/test_images/'
+    img_list = list(glob.glob('data/test_images/*'))
+
+    predictions = np.load('test_predictions.npy')
+
+    for idx, img_name in enumerate(img_list):
+        print "Processing {}".format(img_name)
+        pred = predictions[idx]
+        heatmap = compute_prediciton_heatmap_vectorized(pred, 1000.0)
+        plt.imshow(heatmap, cmap=plt.get_cmap('gray'))
+        fname_suffix = img_name.split('/')[-1].split('.')[0]
+        plt.savefig('out/output_{}.png'.format(fname_suffix))
+        plt.close()
+
+
+if __name__ == "__main__":
+    watch_predictions()
