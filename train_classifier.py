@@ -19,7 +19,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
 
-from extract_features import extract_features_one_image, imread
+from extract_features import (
+    extract_features_one_image, imread, prepare_standard_scaler
+)
 
 #IMAGE_SIZE = (420, 580)
 IMAGE_SIZE = (720, 1280)
@@ -120,12 +122,12 @@ def store_train_predictions(classifier, scaler):
                 scaled_features = scaler.transform(features)
                 prediction = classifier.predict(scaled_features)
 
-                ipdb.set_trace()
+                predictions[idx][y][x] = prediction[0]
+        print prediction[idx].mean()
 
-    np.save(
-        os.path.join(PROCESSED_DATA_PATH, 'train_predictions.npy'),
-        predictions
-    )
+    print "Saving predictions on the test images..."
+    np.save('test_predictions.npy', predictions)
+    print "Done!"
 
 
 if __name__ == "__main__":
