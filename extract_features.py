@@ -15,7 +15,14 @@ import time
 import tqdm
 
 
-def run_extractors():
+# for prediction ????? Need to figure this stuff out, check some examples
+# IMAGE_SIZE = (720, 1280)
+
+# for training
+IMAGE_SIZE = (64, 64)
+
+
+def prepare_training_dataset():
     """ Run the extraction function and save the outputs to the shelve """
     start = time.time()
 
@@ -27,52 +34,25 @@ def run_extractors():
     vehicle_img_list = list(glob.glob("data/vehicles/**/*"))
     nonvehicle_img_list = list(glob.glob("data/non-vehicles/**/*"))
 
-    # print "Number of vehicle images = {}".format(len(vehicle_img_list))
-    # print "Number of non-vehicle images = {}".format(len(nonvehicle_img_list))
-    # print "Balanced!"
+    print "Number of vehicle images = {}".format(len(vehicle_img_list))
+    print "Number of non-vehicle images = {}".format(len(nonvehicle_img_list))
+    print "The number of two classes is more-or-less balanced!"
 
     print "Extracting the vehicle features..."
-    df = extract_features(vehicle_img_list)
-
-    print "Saving the vehicle features..."
-    with open('vehicle-features.p', 'wb') as f:
-        pickle.dump(df, f)
-
+    veh = extract_features(vehicle_img_list)
     print "Done!"
 
     print "Extracting the non-vehicle features..."
-
-    print "Saving the non-vehicle features..."
-    df = extract_features(nonvehicle_img_list)
-    with open('non-vehicle-features.p', 'wb') as f:
-        pickle.dump(df, f)
-
+    non_veh = extract_features(nonvehicle_img_list)
     print "Done! {:.0f} s to extract the data".format(time.time() - start)
 
-
-def concatenate_dataset_parts():
-    """
-    Stuff to do:
-        1) Merge data into one dataset, adding ys
-    """
-
     start = time.time()
+    print "Merging data into one dataset..."
 
-    print "Loading the vehicle features..."
-    with open('vehicle-features.p', 'rb') as f:
-        veh = pickle.load(f)
-        y_veh = np.ones(len(veh))
-
-    print "Loading the non-vehicle features..."
-    with open('non-vehicle-features.p', 'rb') as f:
-        non_veh = pickle.load(f)
-        y_non_veh = np.zeros(len(non_veh))
-
-    print "Making one joint dataframe"
     df_x = pd.concat([veh, non_veh], axis=0)
     y = np.append(np.ones(len(veh)), np.zeros(len(non_veh)))
 
-    print "Writing the features to the file again..."
+    print "Writing the features to file ..."
     with open('features.p', 'wb') as f:
         pickle.dump(df_x, f)
 
@@ -101,8 +81,7 @@ def imread(fname):
 
 
 HOG_DESCRIPTOR = None
-
-def initialize_hog_transform(img_shape,
+def initialize_hog_transform(img_shape=IMAGE_SIZE,
                              orient=9,
                              pix_per_cell=8,
                              cell_per_block=2,
@@ -111,7 +90,7 @@ def initialize_hog_transform(img_shape,
     Taken from internet, but changed quite a bit.
     """
     global HOG_DESCRIPTOR
-    if hog_desc is None or reset:
+    if HOG_DESCRIPTOR is None or reset:
         cell_size = (pix_per_cell, pix_per_cell)  # h x w in pixels
         block_size = (cell_per_block, cell_per_block)  # h x w in cells
         nbins = orient  # number of orientation bins
@@ -161,8 +140,7 @@ def feature_hog(img, transform, method='sklearn'):
     elif method == 'cv2':
         hogger = initialize_hog_transform()
         full_hog_features = hogger.compute(img)
-        ipdb.set_trace()
-        return full_hog_features
+        return full_hog_features[:, 0]
     else:
         raise Exception("Unsupported source of hog transorfm")
 
@@ -189,8 +167,8 @@ def feature_color_hist(img, bins_no=16, bin_range=(0, 256), color_map=None):
         img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
 
     return np.concatenate(
-        np.histogram(img[:, :, col], bins=nbins, range=bin_range)[0]
-        for col in [0, 1, 2]
+        [np.histogram(img[:, :, col], bins=bins_no, range=bin_range)[0]
+         for col in [0, 1, 2]]
     )
 
 
@@ -273,7 +251,8 @@ def measure_dims(image_list):
     print "No of unique heights = {}".format(len(set(df['h'])))
     print "No of unique widths = {}".format(len(set(df['w'])))
 
+    print "Typical h, w = {}".format(df.iloc[0]['h'], df.iloc[0]['w'])
+
 
 if __name__ == "__main__":
-    run_extractors()
-    concatenate_dataset_parts()
+    prepare_training_dataset()

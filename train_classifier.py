@@ -150,8 +150,8 @@ def watch_predictions():
     for idx, img_name in enumerate(img_list):
         print "Processing {}".format(img_name)
         pred = predictions[idx]
-        print pred
-        heatmap = compute_prediciton_heatmap_vectorized(pred, 50.0)
+        heatmap = compute_prediciton_heatmap_vectorized(pred, 200.0)
+        
         plt.imshow(heatmap, cmap=plt.get_cmap('gray'))
         plt.title('Max val = {}'.format(heatmap.max()))
         fname_suffix = img_name.split('/')[-1].split('.')[0]
