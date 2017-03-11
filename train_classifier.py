@@ -12,16 +12,17 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
 import skimage.feature
-
+import time
 
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.externals import joblib
 from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
 
-from extract_features import (
-    extract_features_one_image, imread, prepare_standard_scaler
-)
+from extract_features import extract_features_one_image, imread
 
 #IMAGE_SIZE = (420, 580)
 IMAGE_SIZE = (720, 1280)
@@ -34,6 +35,7 @@ crops_no_x = (IMAGE_SIZE[1] - CROP_SIZE[1]) / CROP_DENSITY
 
 
 def train():
+    start = time.time()
 
     print "Loading the features..."
     with open('features.p', 'rb') as f:
@@ -43,24 +45,29 @@ def train():
     with open('target.p', 'rb') as f:
         y = pickle.load(f)
 
-
     print "Splitting the data into training and testing..."
 
     X, y = shuffle(X, y)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+    print "It took {:.0f} to prepare all data.".format(time.time() - start)
 
     print "Training the classifier..."
+    start = time.time()
 
-    classifier = LinearSVC()
-    # classifier = RandomForestClassifier(n_estimators=250, n_jobs=-1)
+    classifier = Pipeline([('scaling', StandardScaler()),
+                           ('classification', LinearSVC(loss='hinge'))])
+
+    # Check the training time for the SVC
     classifier.fit(X_train, y_train)
+
+    print "It took {:.0f} seconds to train SVM.".format(time.time() - start)
+    print "Saving the result classifier."
+
+    joblib.dump(classifier, 'models/model.pkl')
 
     print "Evalutaing the classifier ..."
     print "{:.2%}".format(classifier.score(X_test, y_test))
     print "Done!"
-
-    return classifier
-
 
 
 class PreCompute():
@@ -95,7 +102,7 @@ def make_crop(img, crop_y, crop_x):
     ]
 
 
-def store_train_predictions(classifier, scaler):
+def store_train_predictions(classifier):
     """
     Depends on ordering of the pictures.
     """
@@ -107,7 +114,7 @@ def store_train_predictions(classifier, scaler):
          (len(img_list), crops_no_y, crops_no_x), dtype=np.float32
     )
 
-    for idx, img_name in tqdm.tqdm(enumerate(img_list)):
+    for idx, img_name in tqdm.tqdm(zip(range(len(img_list)), img_list)):
         img = imread(img_name)
         for y in xrange(int(crops_no_y)):
             for x in xrange(int(crops_no_x)):
@@ -119,11 +126,9 @@ def store_train_predictions(classifier, scaler):
                 features = extract_features_one_image(crop)
                 features = features.values.reshape(1, -1)
 
-                scaled_features = scaler.transform(features)
-                prediction = classifier.predict(scaled_features)
+                prediction = classifier.predict(features)
 
                 predictions[idx][y][x] = prediction[0]
-        print predictions[idx].mean()
 
     print "Saving predictions on the test images..."
     np.save('test_predictions.npy', predictions)
@@ -131,9 +136,8 @@ def store_train_predictions(classifier, scaler):
 
 
 def run_classification_pipeline_on_test_images():
-    classifier = train()
-    scaler = prepare_standard_scaler()
-    store_train_predictions(classifier, scaler)
+    classifier = joblib.load('models/model.pkl')
+    store_train_predictions(classifier)
 
 
 def watch_predictions():
@@ -146,12 +150,16 @@ def watch_predictions():
     for idx, img_name in enumerate(img_list):
         print "Processing {}".format(img_name)
         pred = predictions[idx]
-        heatmap = compute_prediciton_heatmap_vectorized(pred, 1000.0)
+        print pred
+        heatmap = compute_prediciton_heatmap_vectorized(pred, 50.0)
         plt.imshow(heatmap, cmap=plt.get_cmap('gray'))
+        plt.title('Max val = {}'.format(heatmap.max()))
         fname_suffix = img_name.split('/')[-1].split('.')[0]
         plt.savefig('out/output_{}.png'.format(fname_suffix))
         plt.close()
 
 
 if __name__ == "__main__":
+    # train()
+    # run_classification_pipeline_on_test_images()
     watch_predictions()

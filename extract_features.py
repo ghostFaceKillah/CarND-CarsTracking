@@ -4,20 +4,21 @@ accesible format. Script and module at the same time!
 """
 
 import cv2
-import ipdb 
 import glob
-import tqdm
-import numpy as np
+import ipdb 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import pickle
 import skimage.feature
-
-from sklearn.preprocessing import StandardScaler
+import time
+import tqdm
 
 
 def run_extractors():
     """ Run the extraction function and save the outputs to the shelve """
+    start = time.time()
+
     last_img = None
     img = None
     diff = None
@@ -29,7 +30,6 @@ def run_extractors():
     # print "Number of vehicle images = {}".format(len(vehicle_img_list))
     # print "Number of non-vehicle images = {}".format(len(nonvehicle_img_list))
     # print "Balanced!"
-
 
     print "Extracting the vehicle features..."
     df = extract_features(vehicle_img_list)
@@ -47,39 +47,16 @@ def run_extractors():
     with open('non-vehicle-features.p', 'wb') as f:
         pickle.dump(df, f)
 
-    print "Done!"
+    print "Done! {:.0f} s to extract the data".format(time.time() - start)
 
 
-
-def prepare_standard_scaler():
-    print "Preparing standard scaler"
-
-    print "Loading the vehicle features..."
-    with open('vehicle-features.p', 'rb') as f:
-        veh = pickle.load(f)
-        y_veh = np.ones(len(veh))
-
-    print "Loading the non-vehicle features..."
-    with open('non-vehicle-features.p', 'rb') as f:
-        non_veh = pickle.load(f)
-        y_non_veh = np.zeros(len(non_veh))
-
-    print "Making one joint dataframe"
-    df_x = pd.concat([veh, non_veh], axis=0)
-
-    print "Scaling the features"
-    scaler = StandardScaler()
-    scaler.fit(df_x.values)
-    return scaler
-
-
-def prepare_data():
+def concatenate_dataset_parts():
     """
     Stuff to do:
         1) Merge data into one dataset, adding ys
-        2)
     """
 
+    start = time.time()
 
     print "Loading the vehicle features..."
     with open('vehicle-features.p', 'rb') as f:
@@ -93,28 +70,20 @@ def prepare_data():
 
     print "Making one joint dataframe"
     df_x = pd.concat([veh, non_veh], axis=0)
-
-    print "Scaling the features"
-    scaler = StandardScaler()
-    scaler.fit(df_x.values)
-    print "Fit the scaling transform"
-    x_norm = scaler.transform(df_x.values)
     y = np.append(np.ones(len(veh)), np.zeros(len(non_veh)))
-    print "Rescaled the features"
 
     print "Writing the features to the file again..."
     with open('features.p', 'wb') as f:
-        pickle.dump(x_norm, f)
+        pickle.dump(df_x, f)
 
     with open('target.p', 'wb') as f:
         pickle.dump(y, f)
-    print "Done! Features ready to use."
-
+    print "Done! It took {:.0f} s, features ready!".format(time.time() - start)
 
 
 def imread(fname):
     """
-    Wrapper around file readingg
+    Wrapper around file reading
 
     TODO: make some kind of assert making sure that we read stuff in well,
           as different types of image files are read in differently 
@@ -131,7 +100,44 @@ def imread(fname):
     return img
 
 
-def feature_hog(img, transform):
+HOG_DESCRIPTOR = None
+
+def initialize_hog_transform(img_shape,
+                             orient=9,
+                             pix_per_cell=8,
+                             cell_per_block=2,
+                             reset=False):
+    """
+    Taken from internet, but changed quite a bit.
+    """
+    global HOG_DESCRIPTOR
+    if hog_desc is None or reset:
+        cell_size = (pix_per_cell, pix_per_cell)  # h x w in pixels
+        block_size = (cell_per_block, cell_per_block)  # h x w in cells
+        nbins = orient  # number of orientation bins
+        
+        # winSize is the size of the image cropped to a multiple of the cell size
+        HOG_DESCRIPTOR = cv2.HOGDescriptor(
+            _winSize=(
+                img_shape[1] // cell_size[1] * cell_size[1],
+                img_shape[0] // cell_size[0] * cell_size[0]
+            ),   
+            # only 16 x 16 block size is supported for now
+            _blockSize=( 
+                block_size[1] * cell_size[1],
+                block_size[0] * cell_size[0]
+            ),
+            _blockStride=(cell_size[1], cell_size[0]),
+            # only 8 x 8 is supported for now
+            _cellSize=(cell_size[1], cell_size[0]),
+            # only 9 bins are supported for now
+            _nbins=nbins
+        )
+
+    return HOG_DESCRIPTOR
+
+
+def feature_hog(img, transform, method='sklearn'):
     """
     Extract Histogram Of Gradients feature.
     Wraps skimage.feature.hog function.
@@ -142,12 +148,23 @@ def feature_hog(img, transform):
         img = img[:, :, 1]
     elif transform == 'blue':
         img = img[:, :, 2]
+    elif transform == 'yuv_y':
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
+        img = img[:, :, 0]
     elif transform == 'gray':
         img = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     else:
         raise Exception("{} transform is not supported".format(transform))
 
-    return skimage.feature.hog(img)
+    if method == 'sklearn':
+        return skimage.feature.hog(img)
+    elif method == 'cv2':
+        hogger = initialize_hog_transform()
+        full_hog_features = hogger.compute(img)
+        ipdb.set_trace()
+        return full_hog_features
+    else:
+        raise Exception("Unsupported source of hog transorfm")
 
 
 def feature_resize_flatten(img, out_size=(16, 16)):
@@ -155,13 +172,41 @@ def feature_resize_flatten(img, out_size=(16, 16)):
     return cv2.resize(img, out_size).ravel()
 
 
+def feature_color_map_resize_flatten(img, out_size, channel_no=None, color_map=None):
+    if color_map == 'rgb':
+        img = img
+    elif color_map == 'yuv':
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
+
+    if channel_no is not None:
+        img = img[:, :, channel_no]
+
+    return cv2.resize(img, out_size).ravel()
+
+
+def feature_color_hist(img, bins_no=16, bin_range=(0, 256), color_map=None):
+    if color_map == 'yuv':
+        img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
+
+    return np.concatenate(
+        np.histogram(img[:, :, col], bins=nbins, range=bin_range)[0]
+        for col in [0, 1, 2]
+    )
+
+
 FEATURE_2_FUNC = {
-    'red_hog': lambda img: feature_hog(img, 'red'),
-    'blue_hog': lambda img: feature_hog(img, 'blue'),
-    'green_hog': lambda img: feature_hog(img, 'green'),
-    'gray_hog': lambda img: feature_hog(img, 'gray'),
-    'resize_flatten_16x16': lambda img: feature_resize_flatten(img, (16, 16)),
-    'resize_flatten_4x4': lambda img: feature_resize_flatten(img, (4, 4))
+    # 'red_hog': lambda img: feature_hog(img, 'red'),
+    # 'blue_hog': lambda img: feature_hog(img, 'blue'),
+    # 'green_hog': lambda img: feature_hog(img, 'green'),
+    # Y from yuv
+    'yuv_y_hog': lambda img: feature_hog(img, 'yuv_y', method='cv2'),
+    # 'gray_hog': lambda img: feature_hog(img, 'gray'),
+    # 'resize_flatten_16x16': lambda img: feature_resize_flatten(img, (16, 16)),
+    # 'resize_flatten_4x4': lambda img: feature_resize_flatten(img, (4, 4))
+    'yuv_resize_flatten_4x4': (
+        lambda img: feature_color_map_resize_flatten(img, (16, 16), None, 'yuv')
+    ),
+    'yuv_channel_hist': lambda img: feature_color_hist(img, color_map='yuv'),
 }
 
 
@@ -231,4 +276,4 @@ def measure_dims(image_list):
 
 if __name__ == "__main__":
     run_extractors()
-    # prepare_data()
+    concatenate_dataset_parts()
