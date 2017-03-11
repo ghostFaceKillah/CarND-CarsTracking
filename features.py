@@ -224,8 +224,7 @@ def extract_features_one_image(img, wanted_features=FEATURE_2_FUNC.keys()):
          pd.Series(
              value, 
              index=['{}_{}'.format(key, ix) for ix in xrange(len(value))]
-         )
-         for key, value in acc.iteritems()
+         ) for key, value in acc.iteritems()
     ])
 
     return features
