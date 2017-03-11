@@ -1,4 +1,5 @@
 import ipdb
+import itertools
 import numpy as np
 import matplotlib.image as mpimg
 import numpy as np
@@ -48,14 +49,14 @@ def make_windows_one_type(img_shape=(720, 1280),
 
 
 def make_windows(image_size):
-    return [
+    return itertools.chain(*[
         make_windows_one_type(image_size, y_lims, w_size)
         for w_size, y_lims in [
             ((64, 64),  [400, 500]),
             ((96, 96),  [400, 500]),
             ((128, 128),[450, 600])
         ]
-    ]
+    ])
 
 
 def process_one_image(img, windows, clf, dec_threshold=0.75):
@@ -74,12 +75,11 @@ def process_one_image(img, windows, clf, dec_threshold=0.75):
         if int(dec > dec_threshold):
             hot_windows.append(window)
 
-    return hot_windows
+    return make_heatmap(hot_windows, img.shape)
 
 
-def update_heatmap(candidates, image_shape, heatmap = None):
-    if heatmap is None:
-        heatmap = np.zeros((image_shape[0], image_shape[1]), np.uint8)
+def make_heatmap(candidates, image_shape):
+    heatmap = np.zeros((image_shape[0], image_shape[1]), np.uint8)
 
     for pt1, pt2 in candidates:
         x1, y1 = pt1
