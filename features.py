@@ -188,7 +188,7 @@ FEATURE_2_FUNC = {
 }
 
 
-def extract_features(image_list, wanted_features=FEATURE_2_FUNC.keys()):
+def extract_features(image_list, wanted_features=sorted(FEATURE_2_FUNC.keys())):
     """
     Loop over images and extract wanted features.
     """
@@ -205,15 +205,15 @@ def extract_features(image_list, wanted_features=FEATURE_2_FUNC.keys()):
 
     df = pd.concat([
         pd.DataFrame(
-            value,
+            acc[key],
             columns=['{}_{}'.format(key, ix) for ix in xrange(len(value[0]))]
-        ) for key, value in acc.iteritems()
+        ) for key in sorted(acc.keys())
     ], axis=1)
 
     return df
 
 
-def extract_features_one_image(img, wanted_features=FEATURE_2_FUNC.keys()):
+def extract_features_one_image(img, wanted_features=sorted(FEATURE_2_FUNC.keys())):
     acc = {}
     fnames = []
 
@@ -222,9 +222,9 @@ def extract_features_one_image(img, wanted_features=FEATURE_2_FUNC.keys()):
 
     features = pd.concat([
          pd.Series(
-             value, 
+             acc[key],
              index=['{}_{}'.format(key, ix) for ix in xrange(len(value))]
-         ) for key, value in acc.iteritems()
+        ) for key in sorted(acc.keys())
     ])
 
     return features

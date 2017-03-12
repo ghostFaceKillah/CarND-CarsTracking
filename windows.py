@@ -48,7 +48,7 @@ def make_windows_one_type(img_shape=(720, 1280),
     return window_list
 
 
-def make_windows():
+def make_windows(image_size):
     return itertools.chain(*[
         make_windows_one_type(image_size, y_lims, w_size)
         for w_size, y_lims in [
@@ -68,11 +68,13 @@ def process_one_image(img, windows, clf, dec_threshold=0.75):
     for window in windows:
         (sx, sy), (ex, ey) = window
         test_img = cv2.resize(img[sy:ey, sx:ex], (64, 64))
+        ipdb.set_trace()
 
         features = extract_features_one_image(test_img)
         test_features = np.array(features).reshape(1, -1) 
-        dec = clf.decision_function(test_features)
-        if int(dec > dec_threshold):
+        # dec = clf.decision_function(test_features)
+        dec = clf.predict(test_features)[0]
+        if dec > 0.9:
             hot_windows.append(window)
 
     return make_heatmap(hot_windows, img.shape)
@@ -90,12 +92,13 @@ def make_heatmap(hot_windows, image_shape):
     return heatmap
 
 
-def draw_boxes_from_labels(img, heatmap)
+def draw_boxes_from_heatmap(img, heatmap):
     labels, no_cars = label(heatmap)
+    print "There are {} cars in the image".format(no_cars)
 
-    for car_number in range(1, no_cars + 1)
-        y, x = (labels == car_number).nonzero()
-        box_min, box_max = (x.min(), y.min()), (x.max(), y.box())
+    for car_number in xrange(no_cars):
+        y, x = (labels == car_number + 1).nonzero()
+        box_min, box_max = (x.min(), y.min()), (x.max(), y.maxx())
         cv2.rectangle(img, box_min, box_max, (0, 255, 0), 6)
     return img
 
@@ -103,8 +106,72 @@ def draw_boxes_from_labels(img, heatmap)
 def heatmap_to_bounding_boxes(heatmap):
     labels, no_cars = label(thresh_heatmap)
     bboxes = []
-    for car_number in range(1, labels[1]+1):
-        y, x = np.where(labels[0] == car_number)
+    for car_number in xrange(no_cars):
+        y, x = np.where(labels[0] == car_number + 1)
         bboxes.append((x.min(), y.min()), (x.max(), y.box()))
     return bboxes
 
+
+
+def non_max_suppression_fast(boxes, overlapThresh):
+    """
+    This code is taken from
+
+    www.pyimagesearch.com/2015/02/16/faster-non-maximum-suppression-python/
+
+    where it is cited as Malisiewicz et al.
+    """
+    # if there are no boxes, return an empty list
+    if len(boxes) == 0:
+        return []
+ 
+    # if the bounding boxes integers, convert them to floats --
+    # this is important since we'll be doing a bunch of divisions
+    if boxes.dtype.kind == "i":
+        boxes = boxes.astype("float")
+ 
+    # initialize the list of picked indexes
+    pick = []
+ 
+    # grab the coordinates of the bounding boxes
+    x1 = boxes[:, 0]
+    y1 = boxes[:, 1]
+    x2 = boxes[:, 2]
+    y2 = boxes[:, 3]
+ 
+    # compute the area of the bounding boxes and sort the bounding
+    # boxes by the bottom-right y-coordinate of the bounding box
+    area = (x2 - x1 + 1) * (y2 - y1 + 1)
+    idxs = np.argsort(y2)
+ 
+    # keep looping while some indexes still remain in the indexes
+    # list
+    while len(idxs) > 0:
+        # grab the last index in the indexes list and add the
+        # index value to the list of picked indexes
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+ 
+        # find the largest (x, y) coordinates for the start of
+        # the bounding box and the smallest (x, y) coordinates
+        # for the end of the bounding box
+        xx1 = np.maximum(x1[i], x1[idxs[:last]])
+        yy1 = np.maximum(y1[i], y1[idxs[:last]])
+        xx2 = np.minimum(x2[i], x2[idxs[:last]])
+        yy2 = np.minimum(y2[i], y2[idxs[:last]])
+ 
+        # compute the width and height of the bounding box
+        w = np.maximum(0, xx2 - xx1 + 1)
+        h = np.maximum(0, yy2 - yy1 + 1)
+ 
+        # compute the ratio of overlap
+        overlap = (w * h) / area[idxs[:last]]
+ 
+        # delete all indexes from the index list that have
+        idxs = np.delete(idxs, np.concatenate(([last],
+            np.where(overlap > overlapThresh)[0])))
+ 
+    # return only the bounding boxes that were picked using the
+    # integer data type
+    return boxes[pick].astype("int")
