@@ -48,7 +48,7 @@ def make_windows_one_type(img_shape=(720, 1280),
     return window_list
 
 
-def make_windows(image_size):
+def make_windows():
     return itertools.chain(*[
         make_windows_one_type(image_size, y_lims, w_size)
         for w_size, y_lims in [
@@ -90,10 +90,21 @@ def make_heatmap(hot_windows, image_shape):
     return heatmap
 
 
+def draw_boxes_from_labels(img, heatmap)
+    labels, no_cars = label(heatmap)
 
-def draw_boxes_from_labels(img, labels, no_cars):
     for car_number in range(1, no_cars + 1)
-        x, y = (labels == car_number).nonzero()
+        y, x = (labels == car_number).nonzero()
         box_min, box_max = (x.min(), y.min()), (x.max(), y.box())
         cv2.rectangle(img, box_min, box_max, (0, 255, 0), 6)
     return img
+
+
+def heatmap_to_bounding_boxes(heatmap):
+    labels, no_cars = label(thresh_heatmap)
+    bboxes = []
+    for car_number in range(1, labels[1]+1):
+        y, x = np.where(labels[0] == car_number)
+        bboxes.append((x.min(), y.min()), (x.max(), y.box()))
+    return bboxes
+

@@ -10,79 +10,55 @@ from scipy.ndimage.measurements import label
 from sklearn.externals import joblib
 from moviepy.editor import VideoFileClip
 
-from windows import make_windows, process_one_image, draw_boxes_from_labels
+from windows import (
+    make_windows, process_one_image,
+    draw_boxes_from_labels, heatmap_to_bounding_boxes
+)
 
 
-WINDOWS = None
-
-
-
-def pipeline_cached(next_img, context):
+def pipeline_cached(img, context):
     clf = context['clf']
+    tracker = context['tracker']
 
-    global WINDOWS
-    if 'windows' not in context
-        WINDOWS = make_windows(next_image.shape[:2])
+    current_heatmap = process_one_image(img, context['windows'], clf)
 
-    if cache['heatmaps'] is None:
-        cache['heatmaps'] = collections.deque(maxlen=params['heatmap_cache_length'])
-        cache['last_heatmap'] = np.zeros(image.shape[:2])
+    context['heatmaps'].append(current_heatmap)
+    thresh_heatmap = sum(context['heatmaps'])
 
-    if 'tracker' not in cache:
-        cache['tracker'] = VehicleTracker(image.shape)
-    frame_ctr = cache['frame_ctr']
-    tracker = cache['tracker']
-    cache['frame_ctr'] += 1
-
-    current_heatmap = process_one_image(next_img, WINDOWS, clf)
-
-    cache['heatmaps'].append(current_heatmap)
-    thresh_heatmap = sum(cache['heatmaps'])
-
-    thresh_heatmap[thresh_heatmap < params['heatmap_threshold']] = 0
+    thresh_heatmap[thresh_heatmap < context['heatmap_threshold']] = 0
     cv2.GaussianBlur(thresh_heatmap, (31,31), 0, dst=thresh_heatmap)
-    labels, no_cars = label(thresh_heatmap)
-    Z = []
-    for car_number in range(1, labels[1]+1):
-        nonzeroy, nonzerox = np.where(labels[0] == car_number)
-        Z.append((np.min(nonzerox), np.min(nonzeroy), np.max(nonzerox), np.max(nonzeroy)))
-    tracker.track(Z)
+
+    bounding_boxes = heatmap_to_bounding_boxes(thresh_heatmap)
+
+    # Smooth the predictions
+    tracker.track(bounding_boxes)
     im2 = tracker.draw_bboxes(np.copy(image))
 
     return im2
 
 
-def pipeline_non_cached(next_img, context):
+def pipeline_non_cached(img, context):
     clf = context['clf']
 
-    if 'windows' not in context:
-        context['windows'] = make_windows(next_img.shape[:2])
-
-    windows = context['windows']
-
-    current_heatmap = process_one_image(next_img, windows, clf)
+    current_heatmap = process_one_image(img, context['windows'], clf)
 
     thresh_heatmap = current_heatmap
     thresh_heatmap[thresh_heatmap < context['heatmap_threshold']] = 0
     cv2.GaussianBlur(thresh_heatmap, (31,31), 0, dst=thresh_heatmap)
 
-    labels = label(thresh_heatmap)
-    im2 = draw_labeled_bboxes(np.copy(next_img), labels)
+    img_labelled = draw_labeled_bboxes(np.copy(img), thresh_heatmap)
 
-    return im2
+    return img_labelled
 
 
-def clear_cache():
-    pipeline_cached.cache = {
-        'last_heatmap': None,
-        'heatmaps': None,
-        'frame_ctr': 0
-    }
+def initialize_context(context, img_size=(720, 1280)):
+    context['windows'] = make_windows(img_size)
+    cache['heatmaps'] = collections.deque(maxlen=25)
+    cache['last_heatmap'] = np.zeros(image.shape[:2])
+    cache['tracker'] = VehicleTracker(image.shape)
 
 
 if __name__ == '__main__':
-    # clear_cache()
-
     # parser = argparse.ArgumentParser(description='Video file.')
     # parser.add_argument('MODEL', help='name of the pickle with model')
     # parser.add_argument('--in', help='input video file')
@@ -91,20 +67,17 @@ if __name__ == '__main__':
 
     print 'Loading model ...'
     model_fname = 'models/model.pkl'
-    classifier = joblib.load(model_fname)
 
     in_file = 'test_video.mp4'
     out_file = 'out.mp4'
 
-    clear_cache()
     context = {}
-    context['clf'] = classifier
-    context['heatmap_cache_length'] = 25
+    context['clf'] = joblib.load(model_fname)
     context['heatmap_threshold'] = 1
     # context['heatmap_threshold'] = 10
 
-    print('Processing video ...')
-    clip2 = VideoFileClip(in_file)
-    vid_clip = clip2.fl_image(lambda i: pipeline_non_cached(i, context))
-    vid_clip.write_videofile(out_file, audio=False)
+    print 'Processing video ...'
+    clip = VideoFileClip(in_file)
+    out_clip = clip.fl_image(lambda i: pipeline_non_cached(i, context))
+    out_clip.write_videofile(out_file, audio=False)
 
