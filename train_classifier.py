@@ -48,24 +48,22 @@ def train():
     print "Splitting the data into training and testing..."
 
     X, y = shuffle(X, y)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1)
+    X_train, X_test, y_train, y_test = train_test_split(X.values, y, test_size=0.1)
     print "It took {:.0f} to prepare all data.".format(time.time() - start)
 
     print "Training the classifier..."
     start = time.time()
 
-    classifier = Pipeline([('scaling', StandardScaler()),
-                           ('classification', LinearSVC(loss='hinge'))])
     # classifier = Pipeline([('scaling', StandardScaler()),
-    #                        ('classification', RandomForestClassifier(n_estimators=50))])
+    #                      ('classification', LinearSVC(loss='hinge'))])
+    classifier = Pipeline([('scaling', StandardScaler()),
+                           ('classification', RandomForestClassifier(n_estimators=50))])
 
     # Check the training time for the SVC
     classifier.fit(X_train, y_train)
 
     print "It took {:.0f} seconds to train SVM.".format(time.time() - start)
     print "Saving the result classifier."
-
-    ipdb.set_trace()
 
     joblib.dump(classifier, 'models/model.pkl')
 

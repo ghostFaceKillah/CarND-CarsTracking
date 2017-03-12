@@ -198,7 +198,6 @@ def extract_features(image_list, wanted_features=sorted(FEATURE_2_FUNC.keys())):
 
     for fname in tqdm.tqdm(image_list):
         img = imread(fname)
-        ipdb.set_trace()
 
         for feat_name in wanted_features:
             feature_realization  = FEATURE_2_FUNC[feat_name](img)

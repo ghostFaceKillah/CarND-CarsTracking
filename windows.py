@@ -2,8 +2,13 @@ import ipdb
 import itertools
 import numpy as np
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 import numpy as np
+import pickle
 import cv2
+
+import string
+import random
 
 from features import extract_features_one_image
 from scipy.ndimage.measurements import label
@@ -70,13 +75,25 @@ def process_one_image(img, windows, clf, dec_threshold=0.75):
         test_img = cv2.resize(img[sy:ey, sx:ex], (64, 64))
 
         features = extract_features_one_image(test_img)
+
         test_features = np.array(features).reshape(1, -1) 
         # dec = clf.decision_function(test_features)
-        dec = clf.predict(test_features)[0]
-        if dec != 0.0:
-            print dec
-        if dec > 0.9:
+        # dec = clf.predict(test_features)[0]
+        dec = clf.predict_proba(test_features)[0][1]
+
+        if dec > 0.2:
+            print "ooh"
             hot_windows.append(window)
+
+        # DEBUG
+        if dec > 0.2:
+            print dec
+            name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
+            plt.imshow(test_img)
+            plt.title("CAR!!")
+            plt.savefig('out/out_car!!_{}.jpg'.format(name))
+            plt.close()
+
 
     return make_heatmap(hot_windows, img.shape)
 
