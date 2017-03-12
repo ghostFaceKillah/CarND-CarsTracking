@@ -64,7 +64,7 @@ def initialize_context(context, img_size=(720, 1280)):
     # cache['tracker'] = VehicleTracker(image.shape)
 
 
-def old_main():
+if __name__ == '__main__':
     # parser = argparse.ArgumentParser(description='Video file.')
     # parser.add_argument('MODEL', help='name of the pickle with model')
     # parser.add_argument('--in', help='input video file')
@@ -75,7 +75,9 @@ def old_main():
     model_fname = 'models/model.pkl'
 
     in_file = 'vid/project_video.mp4'
-    out_file = 'out/out.mp4'
+    # in_file = 'vid/short_video.mp4'
+    # out_file = 'out/out.mp4'
+    out_file = 'out/main.mp4'
 
     context = {}
     initialize_context(context)
@@ -83,80 +85,22 @@ def old_main():
     context['heatmap_threshold'] = 1
     # context['heatmap_threshold'] = 10
 
-
     # Test classification on something easier
-    img_list = list(glob.glob('data/test_images/*'))
+    # img_list = list(glob.glob('data/test_images/*'))
 
     # img_name = 'data/test_images/test1.jpg'
     # img_name = 'data/test_images/straight_lines2.jpg'
+    #for idx, img_name in tqdm.tqdm(zip(range(len(img_list)), img_list)):
+    #  img = imread(img_name)
 
-    for idx, img_name in tqdm.tqdm(zip(range(len(img_list)), img_list)):
-      img = imread(img_name)
+    #  out_img = pipeline_non_cached(img, context)
 
-      out_img = pipeline_non_cached(img, context)
+    #  plt.imshow(out_img)
+    #  fname_suffix = img_name.split('/')[-1].split('.')[0]
+    #   plt.savefig('out/output_{}.png'.format(fname_suffix))
+    #   plt.close()
 
-      plt.imshow(out_img)
-      fname_suffix = img_name.split('/')[-1].split('.')[0]
-      plt.savefig('out/output_{}.png'.format(fname_suffix))
-      plt.close()
-
-    # print 'Processing video ...'
-    # clip = VideoFileClip(in_file)
-    # out_clip = clip.fl_image(lambda i: pipeline_non_cached(i, context))
-    # out_clip.write_videofile(out_file, audio=False)
-
-
-def one():
-    model_fname = 'models/model.pkl'
-
-
-    context = {}
-    initialize_context(context)
-    context['clf'] = joblib.load(model_fname)
-    context['heatmap_threshold'] = 1
-
-    # Test classification on something easier
-
-    img_name = 'data/test_images/test1.jpg'
-    # img_name = 'data/test_images/test3.jpg'
-
-    img = imread(img_name)
-
-    out_img = pipeline_non_cached(img, context)
-
-    plt.imshow(out_img)
-    fname_suffix = img_name.split('/')[-1].split('.')[0]
-    plt.savefig('out/output_{}.png'.format(fname_suffix))
-    plt.close()
-
-
-def many():
-    model_fname = 'models/model.pkl'
-
-
-    context = {}
-    initialize_context(context)
-    context['clf'] = joblib.load(model_fname)
-    context['heatmap_threshold'] = 1
-
-    # Test classification on something easier
-    img_list = list(glob.glob('data/test_images/*'))
-
-    # img_name = 'data/test_images/test1.jpg'
-    # img_name = 'data/test_images/straight_lines2.jpg'
-
-    for idx, img_name in tqdm.tqdm(zip(range(len(img_list)), img_list)):
-        print img_name
-        img = imread(img_name)
-
-        out_img = pipeline_non_cached(img, context)
-
-        plt.imshow(out_img)
-        fname_suffix = img_name.split('/')[-1].split('.')[0]
-        plt.savefig('out/output_{}.png'.format(fname_suffix))
-        plt.close()
-
-
-if __name__ == '__main__':
-    many()
-    # one()
+    print 'Processing video ...'
+    clip = VideoFileClip(in_file)
+    out_clip = clip.fl_image(lambda i: pipeline_non_cached(i, context))
+    out_clip.write_videofile(out_file, audio=False)

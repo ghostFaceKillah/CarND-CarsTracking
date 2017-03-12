@@ -54,14 +54,14 @@ def make_windows_one_type(img_shape=(720, 1280),
 
 
 def make_windows(image_size):
-    return itertools.chain(*[
+    return list(itertools.chain(*[
         make_windows_one_type(image_size, y_lims, w_size)
         for w_size, y_lims in [
             ((64, 64),  [400, 500]),
             ((96, 96),  [400, 500]),
             ((128, 128),[450, 600])
         ]
-    ])
+    ]))
 
 
 def process_one_image(img, windows, clf, dec_threshold=0.75):
@@ -69,6 +69,7 @@ def process_one_image(img, windows, clf, dec_threshold=0.75):
     Run the classifier over crops of the image
     """
     hot_windows = []
+    windows = list(windows)
 
     for window in windows:
         (sx, sy), (ex, ey) = window
@@ -78,22 +79,14 @@ def process_one_image(img, windows, clf, dec_threshold=0.75):
 
         test_features = np.array(features).reshape(1, -1) 
         # dec = clf.decision_function(test_features)
-        # dec = clf.predict(test_features)[0]
-        dec = clf.predict_proba(test_features)[0][1]
+        dec = clf.predict(test_features)[0]
 
-        if dec > 0.2:
-            print "ooh"
+        if dec != 0:
             hot_windows.append(window)
 
-        # DEBUG
-        if dec > 0.2:
-            print dec
-            name = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(10))
-            plt.imshow(test_img)
-            plt.title("CAR!!")
-            plt.savefig('out/out_car!!_{}.jpg'.format(name))
-            plt.close()
-
+        # dec = clf.predict_proba(test_features)[0][1]
+        # if dec > 0.2:
+        #     hot_windows.append(window)
 
     return make_heatmap(hot_windows, img.shape)
 
@@ -121,7 +114,7 @@ def draw_boxes_from_heatmap(img, heatmap):
 
 
 def heatmap_to_bounding_boxes(heatmap):
-    labels, no_cars = label(thresh_heatmap)
+    labels, no_cars = label(heatmap)
     bboxes = []
     for car_number in xrange(no_cars):
         y, x = np.where(labels[0] == car_number + 1)
