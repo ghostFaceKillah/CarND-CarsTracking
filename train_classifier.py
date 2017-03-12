@@ -22,7 +22,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import LinearSVC
 from sklearn.utils import shuffle
 
-from extract_features import extract_features_one_image, imread
+from features import extract_features_one_image, imread
 
 #IMAGE_SIZE = (420, 580)
 IMAGE_SIZE = (720, 1280)
@@ -38,11 +38,11 @@ def train():
     start = time.time()
 
     print "Loading the features..."
-    with open('features.p', 'rb') as f:
+    with open('dataset_train_features.p', 'rb') as f:
         X = pickle.load(f)
 
     print "Loading the targets..."
-    with open('target.p', 'rb') as f:
+    with open('dataset_train_target.p', 'rb') as f:
         y = pickle.load(f)
 
     print "Splitting the data into training and testing..."
@@ -56,12 +56,16 @@ def train():
 
     classifier = Pipeline([('scaling', StandardScaler()),
                            ('classification', LinearSVC(loss='hinge'))])
+    # classifier = Pipeline([('scaling', StandardScaler()),
+    #                        ('classification', RandomForestClassifier(n_estimators=50))])
 
     # Check the training time for the SVC
     classifier.fit(X_train, y_train)
 
     print "It took {:.0f} seconds to train SVM.".format(time.time() - start)
     print "Saving the result classifier."
+
+    ipdb.set_trace()
 
     joblib.dump(classifier, 'models/model.pkl')
 
@@ -107,7 +111,6 @@ def store_train_predictions(classifier):
     Depends on ordering of the pictures.
     """
 
-    dir_name = 'data/test_images/'
     img_list = list(glob.glob('data/test_images/*'))
 
     predictions = np.zeros(
@@ -142,7 +145,6 @@ def run_classification_pipeline_on_test_images():
 
 def watch_predictions():
 
-    dir_name = 'data/test_images/'
     img_list = list(glob.glob('data/test_images/*'))
 
     predictions = np.load('test_predictions.npy')
@@ -160,6 +162,6 @@ def watch_predictions():
 
 
 if __name__ == "__main__":
-    # train()
+    train()
     # run_classification_pipeline_on_test_images()
-    watch_predictions()
+    # watch_predictions()

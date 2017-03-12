@@ -1,10 +1,12 @@
 import argparse
 import collections
 import cv2
+import glob
 import ipdb
 import itertools
 import matplotlib.pyplot as plt
 import numpy as np
+import tqdm
 
 from scipy.ndimage.measurements import label
 from sklearn.externals import joblib
@@ -14,6 +16,8 @@ from windows import (
     make_windows, process_one_image,
     draw_boxes_from_heatmap, heatmap_to_bounding_boxes
 )
+
+from features import imread
 
 
 def pipeline_cached(img, context):
@@ -44,7 +48,6 @@ def pipeline_non_cached(img, context):
     current_heatmap = process_one_image(img, context['windows'], clf)
 
     thresh_heatmap = current_heatmap
-    print "Mean of heatmap is {}".format(np.mean(thresh_heatmap))
     thresh_heatmap[thresh_heatmap < context['heatmap_threshold']] = 0
     cv2.GaussianBlur(thresh_heatmap, (31,31), 0, dst=thresh_heatmap)
 
@@ -79,8 +82,19 @@ if __name__ == '__main__':
     context['heatmap_threshold'] = 1
     # context['heatmap_threshold'] = 10
 
-    print 'Processing video ...'
-    clip = VideoFileClip(in_file)
-    out_clip = clip.fl_image(lambda i: pipeline_non_cached(i, context))
-    out_clip.write_videofile(out_file, audio=False)
+    # Test classification on something easier
+    img_list = list(glob.glob('data/test_images/*'))
+    for idx, img_name in tqdm.tqdm(zip(range(len(img_list)), img_list)):
+        img = imread(img_name)
+        out_img = pipeline_non_cached(img, context)
+
+        plt.imshow(out_img)
+        fname_suffix = img_name.split('/')[-1].split('.')[0]
+        plt.savefig('out/output_{}.png'.format(fname_suffix))
+        plt.close()
+
+    # print 'Processing video ...'
+    # clip = VideoFileClip(in_file)
+    # out_clip = clip.fl_image(lambda i: pipeline_non_cached(i, context))
+    # out_clip.write_videofile(out_file, audio=False)
 

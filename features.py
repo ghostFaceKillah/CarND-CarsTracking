@@ -53,10 +53,10 @@ def prepare_training_dataset():
     y = np.append(np.ones(len(veh)), np.zeros(len(non_veh)))
 
     print "Writing the features to file ..."
-    with open('features.p', 'wb') as f:
+    with open('dataset_train_features.p', 'wb') as f:
         pickle.dump(df_x, f)
 
-    with open('target.p', 'wb') as f:
+    with open('dataset_train_target.p', 'wb') as f:
         pickle.dump(y, f)
     print "Done! It took {:.0f} s, features ready!".format(time.time() - start)
 
@@ -177,7 +177,7 @@ FEATURE_2_FUNC = {
     # 'blue_hog': lambda img: feature_hog(img, 'blue'),
     # 'green_hog': lambda img: feature_hog(img, 'green'),
     # Y from yuv
-    'yuv_y_hog': lambda img: feature_hog(img, 'yuv_y', method='cv2'),
+    'yuv_y_hog': lambda img: feature_hog(img, 'yuv_y', method='sklearn'),
     # 'gray_hog': lambda img: feature_hog(img, 'gray'),
     # 'resize_flatten_16x16': lambda img: feature_resize_flatten(img, (16, 16)),
     # 'resize_flatten_4x4': lambda img: feature_resize_flatten(img, (4, 4))
@@ -198,6 +198,7 @@ def extract_features(image_list, wanted_features=sorted(FEATURE_2_FUNC.keys())):
 
     for fname in tqdm.tqdm(image_list):
         img = imread(fname)
+        ipdb.set_trace()
 
         for feat_name in wanted_features:
             feature_realization  = FEATURE_2_FUNC[feat_name](img)
@@ -206,7 +207,7 @@ def extract_features(image_list, wanted_features=sorted(FEATURE_2_FUNC.keys())):
     df = pd.concat([
         pd.DataFrame(
             acc[key],
-            columns=['{}_{}'.format(key, ix) for ix in xrange(len(value[0]))]
+            columns=['{}_{}'.format(key, ix) for ix in range(len(acc[key][0]))]
         ) for key in sorted(acc.keys())
     ], axis=1)
 
@@ -223,7 +224,7 @@ def extract_features_one_image(img, wanted_features=sorted(FEATURE_2_FUNC.keys()
     features = pd.concat([
          pd.Series(
              acc[key],
-             index=['{}_{}'.format(key, ix) for ix in xrange(len(value))]
+             index=['{}_{}'.format(key, ix) for ix in xrange(len(acc[key]))]
         ) for key in sorted(acc.keys())
     ])
 

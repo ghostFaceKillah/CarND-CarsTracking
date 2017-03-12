@@ -68,12 +68,13 @@ def process_one_image(img, windows, clf, dec_threshold=0.75):
     for window in windows:
         (sx, sy), (ex, ey) = window
         test_img = cv2.resize(img[sy:ey, sx:ex], (64, 64))
-        ipdb.set_trace()
 
         features = extract_features_one_image(test_img)
         test_features = np.array(features).reshape(1, -1) 
         # dec = clf.decision_function(test_features)
         dec = clf.predict(test_features)[0]
+        if dec != 0.0:
+            print dec
         if dec > 0.9:
             hot_windows.append(window)
 
@@ -87,18 +88,17 @@ def make_heatmap(hot_windows, image_shape):
         sx, ex = np.clip((sx, ex), 0, image_shape[1])
         sy, ey = np.clip((sy, ey), 0, image_shape[0])
         xs, ys = np.meshgrid(xrange(sx, ex), xrange(sy, ey))
-        heatmap[yv, xv] += 1
+        heatmap[ys, xs] += 1
 
     return heatmap
 
 
 def draw_boxes_from_heatmap(img, heatmap):
     labels, no_cars = label(heatmap)
-    print "There are {} cars in the image".format(no_cars)
 
     for car_number in xrange(no_cars):
         y, x = (labels == car_number + 1).nonzero()
-        box_min, box_max = (x.min(), y.min()), (x.max(), y.maxx())
+        box_min, box_max = (x.min(), y.min()), (x.max(), y.max())
         cv2.rectangle(img, box_min, box_max, (0, 255, 0), 6)
     return img
 
