@@ -20,11 +20,11 @@ def make_windows_one_type(img_shape=(720, 1280),
 
     x_start_stop = 0, img_shape[1]
 
-    # Compute the span of the region to be covered with windows
+    # What's the x and y span of the region to be covered with windows
     xspan = x_start_stop[1] - x_start_stop[0]
     yspan = y_start_stop[1] - y_start_stop[0]
 
-    # Compute the number of pixels per step in x/y
+    # number of pixels per step in x/y
     xy_overlap=(0.5, 0.5)
     nx_pix_per_step = np.int(w_size[0] * (1 - xy_overlap[0]))
     ny_pix_per_step = np.int(w_size[1] * (1 - xy_overlap[1]))
@@ -61,7 +61,7 @@ def make_windows(image_size):
 
 def process_one_image(img, windows, clf, dec_threshold=0.75):
     """
-    Run the classifier over crops in the image
+    Run the classifier over crops of the image
     """
     hot_windows = []
 
@@ -78,22 +78,22 @@ def process_one_image(img, windows, clf, dec_threshold=0.75):
     return make_heatmap(hot_windows, img.shape)
 
 
-def make_heatmap(candidates, image_shape):
+def make_heatmap(hot_windows, image_shape):
     heatmap = np.zeros((image_shape[0], image_shape[1]), np.uint8)
 
-    for pt1, pt2 in candidates:
-        x1, y1 = pt1
-        x2, y2 = pt2
-        x1 = min(max(x1, 0), image_shape[1])
-        x2 = min(max(x2, 0), image_shape[1])
-        y1 = min(max(y1, 0), image_shape[0])
-        y2 = min(max(y2, 0), image_shape[0])
-        xv, yv = np.meshgrid(range(x1, x2), range(y1, y2))
-
+    for (sx, sy), (ex, ey) in hot_windows:
+        sx, ex = np.clip((sx, ex), 0, image_shape[1])
+        sy, ey = np.clip((sy, ey), 0, image_shape[0])
+        xs, ys = np.meshgrid(xrange(sx, ex), xrange(sy, ey))
         heatmap[yv, xv] += 1
 
     return heatmap
 
 
-if __name__ == "__main__":
-    print make_windows((720, 1280))
+
+def draw_boxes_from_labels(img, labels, no_cars):
+    for car_number in range(1, no_cars + 1)
+        x, y = (labels == car_number).nonzero()
+        box_min, box_max = (x.min(), y.min()), (x.max(), y.box())
+        cv2.rectangle(img, box_min, box_max, (0, 255, 0), 6)
+    return img
