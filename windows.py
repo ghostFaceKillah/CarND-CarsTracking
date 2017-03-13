@@ -117,8 +117,8 @@ def heatmap_to_bounding_boxes(heatmap):
     labels, no_cars = label(heatmap)
     bboxes = []
     for car_number in xrange(no_cars):
-        y, x = np.where(labels[0] == car_number + 1)
-        bboxes.append((x.min(), y.min()), (x.max(), y.box()))
+        y, x = np.where(labels == car_number + 1)
+        bboxes.append((x.min(), y.min()), (x.max(), y.max()))
     return bboxes
 
 
