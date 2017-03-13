@@ -29,27 +29,11 @@ def pipeline_cached(img, context):
     context['heatmaps'].append(current_heatmap)
     thresh_heatmap = sum(context['heatmaps'])
 
-    thresh_heatmap[thresh_heatmap < 10] = 0
+    thresh_heatmap[thresh_heatmap < 14] = 0
     cv2.GaussianBlur(thresh_heatmap, (31,31), 0, dst=thresh_heatmap)
 
     bounding_boxes = heatmap_to_bounding_boxes(thresh_heatmap)
     context['bounding_boxes'].append(bounding_boxes)
-    img_labelled = draw_boxes_from_heatmap(np.copy(img), thresh_heatmap)
-
-    # Smooth the predictions in time
-    # SmoothingAlgo.smooth(context['bounding_boxes']
-
-    return img_labelled
-
-
-def pipeline_non_cached(img, context):
-    clf = context['clf']
-
-    current_heatmap = process_one_image(img, context['windows'], clf)
-
-    thresh_heatmap = current_heatmap
-    cv2.GaussianBlur(thresh_heatmap, (31,31), 0, dst=thresh_heatmap)
-
     img_labelled = draw_boxes_from_heatmap(np.copy(img), thresh_heatmap)
 
     return img_labelled
@@ -74,10 +58,10 @@ if __name__ == '__main__':
     print 'Loading model ...'
     model_fname = 'models/model.pkl'
 
-    # in_file = 'vid/project_video.mp4'
-    in_file = 'vid/short_video.mp4'
-    out_file = 'out/short.mp4'
-    # out_file = 'out/main.mp4'
+    in_file = 'vid/project_video.mp4'
+    # in_file = 'vid/short_video.mp4'
+    # out_file = 'out/short.mp4'
+    out_file = 'out/main.mp4'
 
     context = initialize_context()
     context['clf'] = joblib.load(model_fname)

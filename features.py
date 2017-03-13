@@ -15,10 +15,6 @@ import time
 import tqdm
 
 
-# for prediction ????? Need to figure this stuff out, check some examples
-# IMAGE_SIZE = (720, 1280)
-
-# for training
 IMAGE_SIZE = (64, 64)
 
 
@@ -83,19 +79,16 @@ def imread(fname):
 HOG_DESCRIPTOR = None
 def initialize_hog_transform(img_shape=IMAGE_SIZE,
                              orient=9,
-                             pix_per_cell=8,
+                             pixels_per_cell=8,
                              cell_per_block=2,
                              reset=False):
-    """
-    Taken from internet, but changed quite a bit.
-    """
     global HOG_DESCRIPTOR
     if HOG_DESCRIPTOR is None or reset:
-        cell_size = (pix_per_cell, pix_per_cell)  # h x w in pixels
-        block_size = (cell_per_block, cell_per_block)  # h x w in cells
-        nbins = orient  # number of orientation bins
+        cell_size = (pixels_per_cell, pixels_per_cell) 
+        block_size = (cell_per_block, cell_per_block)
+        nbins = orient
         
-        # winSize is the size of the image cropped to a multiple of the cell size
+        # winSize is the size of the image truncated to multiple of cell size
         HOG_DESCRIPTOR = cv2.HOGDescriptor(
             _winSize=(
                 img_shape[1] // cell_size[1] * cell_size[1],
@@ -119,7 +112,7 @@ def initialize_hog_transform(img_shape=IMAGE_SIZE,
 def feature_hog(img, transform, method='sklearn'):
     """
     Extract Histogram Of Gradients feature.
-    Wraps skimage.feature.hog function.
+    Wraps skimage.feature.hog (or cv2) function.
     """
     if transform == 'red':
         img = img[:, :, 0]
