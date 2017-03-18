@@ -7,6 +7,7 @@ Vehicle Detection and Tracking
 [image_hist_features]: ./img/hist_features.jpg "Histogram Features Example"
 [image_lowres_features]: ./img/lowres_features.jpg "Low-res Features Example"
 [image_boxes_visualization]: ./img/boxes_visualization.jpg "Visualization of considered crops"
+[image_combining_predictions]: ./img/combining_predictions.jpg "Combining predictions"
 
 ### Feature extraction
 #### Histogram of Oriented Gradients (HOG)
@@ -120,7 +121,8 @@ crop produced by the sliding window search, if classifier returns a
 positive prediction, we add one to value of each pixel on the heatmap
 that belongs to currently considered crop. Additionally this heamap is summed over
 consecutive 20 videos frames. This corresponds to summing over 0.8 second of 
-the input video. The predictions are also smoothed with gaussian blur.
+the input video. The predictions are also smoothed with gaussian blur, the motivation being 
+mainly smoothing the temporal component.
 
 * Next, I use `scipy.ndimage.measurements.label` utility on the heatmap that
 is output of the previous step. This utility assigns unique labels to continuous
@@ -130,8 +132,7 @@ regions of non-zero pixels.
 box to the smallest rectangle that contains all of the pixels in the given labelled 
 region.
 
-TODO(mike): Make some pictures of this here. Show some examples of test images
- to demonstrate how your pipeline is working.
+![alt text][image_combining_predictions]
 
 I have chosen this implementation as a reasonable starting point due to
 its simplicity. It is easy to observe in action and works ok.
@@ -151,47 +152,11 @@ to show up for longer period on the temporal smoothing heatmap.
 
 
 This procedure, however contains a serious flaw. I have tweaked the performance of
-the pipeline to the supplied videos. It can be the case that it actually decre
- 
- we cannot be sure how it will
-generalize outside of the particular videos used in this project.
+the pipeline to the supplied videos. It can be the case that it actually decreases
+the ability generalize outside of the particular videos used in this project.
 
 
-Some justification has been given for the particular implementation chosen.
-
-
-X How did you optimize the performance of your classifier?
-
-
-X Some discussion is given around how you improved the reliability of the
-  classifier i.e., fewer false positives and more reliable car detections (this
-  could be things like choice of feature vector, thresholding the decision
-  function, hard negative mining etc.)
-
-
-
-CRITERIA - Video Implementation
-X Provide a link to your final video output.
-  Your pipeline should perform reasonably well on the entire project video
-  (somewhat wobbly or unstable bounding boxes are ok as long as you are
-  identifying the vehicles most of the time with minimal false positives.)
-
-* The sliding-window search plus classifier has been used to search for and
-  identify vehicles in the videos provided.
-  Video output has been generated with detected vehicle positions drawn
-  (bounding boxes, circles, cubes, etc.) on each frame of video.
-
-* Describe how (and identify where in your code) you implemented some kind of
-  filter for false positives and some method for combining overlapping bounding
-  boxes.
-
-* A method, such as requiring that a detection be found at or near the same
-  position in several subsequent frames, (could be a heat map showing the
-  location of repeat detections) is implemented as a means of rejecting false
-  positives, and this demonstrably reduces the number of false positives. Same or
-  similar method used to draw bounding boxes (or circles, cubes, etc.) around
-  high-confidence detections where multiple overlapping detections occur.
-
+The final video can be seen on youtube:
 
 
 

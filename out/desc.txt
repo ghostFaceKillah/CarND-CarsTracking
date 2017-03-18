@@ -1,0 +1,14 @@
+all of below are on the random forest classifier... 
+
+project safe bet - run with no-caching pipeline
+project one - run with caching pipeline, 10 frames to classify, 50 positive classification threshold
+project_two - caching, 14, 0.3 (from 0.3 positive). Too many false positives, but white hard is OK. try lower.
+project_three - caching, 14, 0.4. Some false positives still, white hard is not ok. Trying 0.35.
+project_four - best so far, caching, 14, 0.35, a lot of false positives, white hard is great.
+
+Let's try drastically lower caching constant
+
+project_five - caching, 5, 0.35. Way way too many false positives on the left side. 
+
+Let's try making the caching constant way higher.
+
