@@ -1,14 +1,7 @@
-import ipdb
 import itertools
 import numpy as np
-import matplotlib.image as mpimg
-import matplotlib.pyplot as plt
-import numpy as np
-import pickle
 import cv2
 
-import string
-import random
 
 from features import extract_features_one_image
 from scipy.ndimage.measurements import label
@@ -31,7 +24,7 @@ def make_windows_one_type(img_shape=(720, 1280),
     yspan = y_bounds[1] - y_bounds[0]
 
     # number of pixels per step in x/y
-    xy_overlap=(0.5, 0.5)
+    xy_overlap = (0.5, 0.5)
     nx_pix_per_step = np.int(w_size[0] * (1 - xy_overlap[0]))
     ny_pix_per_step = np.int(w_size[1] * (1 - xy_overlap[1]))
 
@@ -58,9 +51,9 @@ def make_windows(image_size):
     return list(itertools.chain(*[
         make_windows_one_type(image_size, y_lims, w_size)
         for w_size, y_lims in [
-            ((64, 64),  [400, 500]),
-            ((96, 96),  [400, 500]),
-            ((128, 128),[450, 600])
+            ((64, 64),   [400, 500]),
+            ((96, 96),   [400, 500]),
+            ((128, 128), [450, 600])
         ]]))
 
 

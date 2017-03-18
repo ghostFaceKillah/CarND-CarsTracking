@@ -1,24 +1,15 @@
-import argparse
 import collections
 import cv2
-import glob
-import ipdb
-import itertools
-import matplotlib.pyplot as plt
 import numpy as np
-import pickle
-import tqdm
 
-from scipy.ndimage.measurements import label
 from sklearn.externals import joblib
 from moviepy.editor import VideoFileClip
+
 
 from windows import (
     make_windows, process_one_image,
     draw_boxes_from_heatmap, heatmap_to_bounding_boxes
 )
-
-from features import imread
 
 
 def pipeline_cached(img, context):
@@ -29,10 +20,10 @@ def pipeline_cached(img, context):
     context['heatmaps'].append(current_heatmap)
     thresh_heatmap = sum(context['heatmaps'])
 
-    thresh_heatmap[thresh_heatmap < 14] = 0
-    cv2.GaussianBlur(thresh_heatmap, (31,31), 0, dst=thresh_heatmap)
+    thresh_heatmap[thresh_heatmap < 20] = 0
+    blurred_heatmap = cv2.GaussianBlur(thresh_heatmap, (31,31), 0)
 
-    bounding_boxes = heatmap_to_bounding_boxes(thresh_heatmap)
+    bounding_boxes = heatmap_to_bounding_boxes(blurred_heatmap)
     context['bounding_boxes'].append(bounding_boxes)
     img_labelled = draw_boxes_from_heatmap(np.copy(img), thresh_heatmap)
 
@@ -68,6 +59,5 @@ if __name__ == '__main__':
 
     print 'Processing video ...'
     clip = VideoFileClip(in_file)
-    # out_clip = clip.fl_image(lambda i: pipeline_non_cached(i, context))
     out_clip = clip.fl_image(lambda i: pipeline_cached(i, context))
     out_clip.write_videofile(out_file, audio=False)

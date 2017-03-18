@@ -1,17 +1,8 @@
-"""
-Extract machine learning features from images and save them in an easily
-accesible format. Script and module at the same time!
-"""
-
-import cv2
-import ipdb 
 import glob
 import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 import pickle
-import skimage.feature
 import time
 
 from sklearn.ensemble import RandomForestClassifier
@@ -24,7 +15,6 @@ from sklearn.utils import shuffle
 
 from features import extract_features_one_image, imread
 
-#IMAGE_SIZE = (420, 580)
 IMAGE_SIZE = (720, 1280)
 CROP_SIZE = (64, 64)
 CROP_STRIDE = (40, 40)

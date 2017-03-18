@@ -5,8 +5,6 @@ accesible format. Script and module at the same time!
 
 import cv2
 import glob
-import ipdb 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pickle
@@ -16,6 +14,22 @@ import tqdm
 
 
 IMAGE_SIZE = (64, 64)
+
+
+FEATURE_2_FUNC = {
+    # 'red_hog': lambda img: feature_hog(img, 'red'),
+    # 'blue_hog': lambda img: feature_hog(img, 'blue'),
+    # 'green_hog': lambda img: feature_hog(img, 'green'),
+    # Y from yuv
+    'yuv_y_hog': lambda img: feature_hog(img, 'yuv_y', method='sklearn'),
+    # 'gray_hog': lambda img: feature_hog(img, 'gray'),
+    # 'resize_flatten_16x16': lambda img: feature_resize_flatten(img, (16, 16)),
+    # 'resize_flatten_4x4': lambda img: feature_resize_flatten(img, (4, 4))
+    'yuv_resize_flatten_4x4': (
+        lambda img: feature_color_map_resize_flatten(img, (16, 16), None, 'yuv')
+    ),
+    'yuv_channel_hist': lambda img: feature_color_hist(img, color_map='yuv'),
+}
 
 
 def prepare_training_dataset():
@@ -165,22 +179,6 @@ def feature_color_hist(img, bins_no=16, bin_range=(0, 256), color_map=None):
     )
 
 
-FEATURE_2_FUNC = {
-    # 'red_hog': lambda img: feature_hog(img, 'red'),
-    # 'blue_hog': lambda img: feature_hog(img, 'blue'),
-    # 'green_hog': lambda img: feature_hog(img, 'green'),
-    # Y from yuv
-    'yuv_y_hog': lambda img: feature_hog(img, 'yuv_y', method='sklearn'),
-    # 'gray_hog': lambda img: feature_hog(img, 'gray'),
-    # 'resize_flatten_16x16': lambda img: feature_resize_flatten(img, (16, 16)),
-    # 'resize_flatten_4x4': lambda img: feature_resize_flatten(img, (4, 4))
-    'yuv_resize_flatten_4x4': (
-        lambda img: feature_color_map_resize_flatten(img, (16, 16), None, 'yuv')
-    ),
-    'yuv_channel_hist': lambda img: feature_color_hist(img, color_map='yuv'),
-}
-
-
 def extract_features(image_list, wanted_features=sorted(FEATURE_2_FUNC.keys())):
     """
     Loop over images and extract wanted features.
@@ -208,7 +206,6 @@ def extract_features(image_list, wanted_features=sorted(FEATURE_2_FUNC.keys())):
 
 def extract_features_one_image(img, wanted_features=sorted(FEATURE_2_FUNC.keys())):
     acc = {}
-    fnames = []
 
     for feat_name in wanted_features:
         acc[feat_name] = FEATURE_2_FUNC[feat_name](img)
