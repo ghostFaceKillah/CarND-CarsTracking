@@ -88,9 +88,9 @@ The code for this part of pipeline can be found is `windows.py`.
 
 I first precompute a list of coordinates of all windows.
 The windows come in three varieties:
-  - `64 x 64` pixels, sweeping heights between `400` and `500` and whole width
-  - `96 x 96` pixels, heights in the range `[400, 500]`
-  - `128 x 128` pixels, heights in the range `[400, 450]`
+  - `64 x 64` pixels, sweeping heights between `400` and `600` and whole width
+  - `96 x 96` pixels, heights in the range `[400, 600]`
+  - `128 x 128` pixels, heights in the range `[400, 600]`
 
 How this windows relate to the input image can be seen on the below 
 visualization.
@@ -157,6 +157,10 @@ the ability generalize outside of the particular videos used in this project.
 
 
 The final video can be seen on youtube:
+[![Project video output](https://img.youtube.com/vi/ZB8m3I_nx7o/0.jpg)](https://youtu.be/ZB8m3I_nx7o)
+
+as well in this repository
+[project_four.mp4](./out/project_four.mp4)
 
 
 

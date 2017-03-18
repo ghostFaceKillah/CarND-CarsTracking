@@ -51,8 +51,8 @@ def make_windows(image_size):
     return list(itertools.chain(*[
         make_windows_one_type(image_size, y_lims, w_size)
         for w_size, y_lims in [
-            ((64, 64),   [400, 500]),
-            ((96, 96),   [400, 500]),
+            ((64, 64),   [400, 600]),
+            ((96, 96),   [400, 600]),
             ((128, 128), [450, 600])
         ]]))
 
