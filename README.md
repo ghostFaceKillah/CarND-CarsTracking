@@ -7,7 +7,7 @@ Vehicle Detection and Tracking
 [image_hist_features]: ./img/hist_features.jpg "Histogram Features Example"
 [image_lowres_features]: ./img/lowres_features.jpg "Low-res Features Example"
 [image_boxes_visualization]: ./img/boxes_visualization.jpg "Visualization of considered crops"
-[image_combining_predictions]: ./img/combining_predictions.jpg "Combining predictions"
+[image_combining_predictions]: ./img/combining_predictions_2.jpg "Combining predictions"
 
 ### Feature extraction
 #### Histogram of Oriented Gradients (HOG)

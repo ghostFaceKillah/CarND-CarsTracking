@@ -156,77 +156,85 @@ def visualize_classification_pipeline():
     from features import extract_features_one_image
     from sklearn.externals import joblib
 
-    fname = 'img/input/test1.jpg'
-
-    img = imread(fname)
-    img_size = (720, 1280)
-
-    model_fname = 'models/model.pkl'
-    clf = joblib.load(model_fname)
-
-    windows = make_windows(img_size)
-    dec_threshold = 0.35
-
-    # Mark predictions on the original image
-
-    hot_windows = []
-    for window in windows:
-        (sx, sy), (ex, ey) = window
-        test_img = cv2.resize(img[sy:ey, sx:ex], (64, 64))
-
-        features = extract_features_one_image(test_img)
-
-        test_features = np.array(features).reshape(1, -1)
-
-        dec = clf.predict_proba(test_features)[0][1]
-
-        if dec > dec_threshold:
-            hot_windows.append(window)
-
-    for box_min, box_max in hot_windows:
-        cv2.rectangle(img, box_min, box_max, (0, 255, 0), 2)
-
-
-    # Make a heatmap of predictions
-    heatmap = np.zeros(img_size, np.uint8)
-
-    for (sx, sy), (ex, ey) in hot_windows:
-        sx, ex = np.clip((sx, ex), 0, img_size[1])
-        sy, ey = np.clip((sy, ey), 0, img_size[0])
-        xs, ys = np.meshgrid(xrange(sx, ex), xrange(sy, ey))
-        heatmap[ys, xs] += 1
-
-    blurred_heatmap = cv2.GaussianBlur(heatmap, (31,31), 0)
-
-    labels, no_cars = label(blurred_heatmap)
-
-    assert no_cars == 3
-
-    colors = [
-        (255, 0, 0),
-        (255, 255, 0),
-        (0, 255, 0)
+    fnames = [
+        'img/input/test1.jpg',
+        'img/input/test6.jpg'
     ]
 
-    blurred_heatmap = blurred_heatmap * (255 / (blurred_heatmap.max() + 1))
-    blurred_heatmap = np.dstack(3 * [blurred_heatmap])
+    fig, ax = plt.subplots(2, 2)
 
 
-    for car_number, color in enumerate(colors):
-        y, x = (labels == car_number + 1).nonzero()
-        box_min, box_max = (x.min(), y.min()), (x.max(), y.max())
-        cv2.rectangle(blurred_heatmap, box_min, box_max, color, 3)
+    for iidx, fname in enumerate(fnames):
+
+        img = imread(fname)
+        img_size = (720, 1280)
+
+        model_fname = 'models/model.pkl'
+        clf = joblib.load(model_fname)
+
+        windows = make_windows(img_size)
+        dec_threshold = 0.35
+
+        # Mark predictions on the original image
+
+        hot_windows = []
+        for window in windows:
+            (sx, sy), (ex, ey) = window
+            test_img = cv2.resize(img[sy:ey, sx:ex], (64, 64))
+
+            features = extract_features_one_image(test_img)
+
+            test_features = np.array(features).reshape(1, -1)
+
+            dec = clf.predict_proba(test_features)[0][1]
+
+            if dec > dec_threshold:
+                hot_windows.append(window)
+
+        for box_min, box_max in hot_windows:
+            cv2.rectangle(img, box_min, box_max, (0, 255, 0), 2)
 
 
-    fig, ax = plt.subplots(2, 1)
+        # Make a heatmap of predictions
+        heatmap = np.zeros(img_size, np.uint8)
 
-    ax[0].imshow(img)
-    ax[0].set_title("Input image with predictions marked")
+        for (sx, sy), (ex, ey) in hot_windows:
+            sx, ex = np.clip((sx, ex), 0, img_size[1])
+            sy, ey = np.clip((sy, ey), 0, img_size[0])
+            xs, ys = np.meshgrid(xrange(sx, ex), xrange(sy, ey))
+            heatmap[ys, xs] += 1
 
-    ax[1].imshow(blurred_heatmap)
-    ax[1].set_title("Heatmap of predictions with the final bounding boxes")
+        blurred_heatmap = cv2.GaussianBlur(heatmap, (31,31), 0)
 
-    plt.savefig("img/combining_predictions.jpg")
+        labels, no_cars = label(blurred_heatmap)
+
+        assert no_cars <= 3
+
+        colors = [
+            (255, 0, 0),
+            (255, 255, 0),
+            (0, 255, 0)
+        ]
+
+        blurred_heatmap = blurred_heatmap * (255 / (blurred_heatmap.max() + 1))
+        blurred_heatmap = np.dstack(3 * [blurred_heatmap])
+
+
+        for car_number in range(no_cars):
+            color = colors[car_number]
+            y, x = (labels == car_number + 1).nonzero()
+            box_min, box_max = (x.min(), y.min()), (x.max(), y.max())
+            cv2.rectangle(blurred_heatmap, box_min, box_max, color, 3)
+
+
+
+        ax[0][iidx].imshow(img)
+        ax[0][iidx].set_title("Input image with predictions marked")
+
+        ax[1][iidx].imshow(blurred_heatmap)
+        ax[1][iidx].set_title("Heatmap with the bounding boxes")
+
+    plt.savefig("img/combining_predictions_2.jpg")
     plt.close()
 
 
