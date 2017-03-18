@@ -36,7 +36,7 @@ The choice was based on classifier performance on the test set and on my
 subjective opinion about visualizations of the computed features.
 The luminance channel from YUV looks clear, with good contrast.
 
-![alt text][image_hog_features]
+![HOG features][image_hog_features]
 
 
 #### Other features
@@ -45,9 +45,9 @@ I have implemented some additional features.
 
   - rescale the whole image to `16x16` pixels, map it to YUV color space and use
   all `16x16x3` pixels of the resulting image as features
-![alt text][image_lowres_features]
+![Low-res features][image_lowres_features]
   - histogram of YUV channels of such rescaled image
-![alt text][image_hist_features]: 
+![histogram features][image_hist_features]: 
 
 ### Training and choosing classifier
 
@@ -95,8 +95,7 @@ The windows come in three varieties:
 How this windows relate to the input image can be seen on the below 
 visualization.
 
-TODO(mike): Put a picture with window visualization here.
-![alt text][image_boxes_visualization]
+![crops visualization][image_boxes_visualization]
 
 I have decided on this particular scales of window search
 and the amount of overlap (50%) based on my previous
@@ -110,8 +109,6 @@ and classification.
   
   
 ##### Merging information from multiple windows
-
-TODO(mike): Visualize each step? 
 
 The classifications on multiple windows are mixed using a simple algorithm:
 
@@ -132,7 +129,7 @@ regions of non-zero pixels.
 box to the smallest rectangle that contains all of the pixels in the given labelled 
 region.
 
-![alt text][image_combining_predictions]
+![Combining predictions on crops][image_combining_predictions]
 
 I have chosen this implementation as a reasonable starting point due to
 its simplicity. It is easy to observe in action and works ok.
@@ -157,6 +154,7 @@ the ability generalize outside of the particular videos used in this project.
 
 
 The final video can be seen on youtube:
+
 [![Project video output](https://img.youtube.com/vi/ZB8m3I_nx7o/0.jpg)](https://youtu.be/ZB8m3I_nx7o)
 
 as well in this repository
