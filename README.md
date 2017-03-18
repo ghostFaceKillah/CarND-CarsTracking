@@ -1,4 +1,4 @@
-Vehicle Detection and Tracking
+# Vehicle Detection and Tracking
 
 
 [//]: # (Image References)
@@ -9,7 +9,25 @@ Vehicle Detection and Tracking
 [image_boxes_visualization]: ./img/boxes_visualization.jpg "Visualization of considered crops"
 [image_combining_predictions]: ./img/combining_predictions_2.jpg "Combining predictions"
 
+
+In this project, our goal is to write a software pipeline to detect vehicles in a video.
+
+
+The specific goals were to :
+
+* Perform a Histogram of Oriented Gradients (HOG) feature extraction on a labeled training set of images
+* Optionally, one can also apply a color transform and append binned color features, 
+   as well as histograms of color, to HOG feature vector. 
+* Normalize your features and randomize a selection for training and testing.
+* Implement a sliding-window technique and use your trained classifier to search for vehicles in images.
+* Run your pipeline on a video stream and create a heat map of recurring detections frame by frame
+ to reject outliers and follow detected vehicles.
+* Estimate a bounding box for vehicles detected.
+
 ### Feature extraction
+
+We start by describing the feature extraction part
+
 #### Histogram of Oriented Gradients (HOG)
 
 This assignment is based around HOG features (and some additional simple space / color features).
